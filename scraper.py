@@ -1,45 +1,40 @@
-import bs4
-from urllib.request import urlopen
-from bs4 import BeautifulSoup as soup
+from selenium import webdriver
+import re
+from xlwt import Workbook
+from openpyxl import Workbook
 
-## Test Development
+# Enter Local Path to Driver Chrome For Browser Support
+PATH = "/Users/daniel/code/scraper/chromedriver"
 
-my_url = 'https://www.bridgewaterassociates.com/people'
+# Instantiate Chrome Window
+driver = webdriver.Chrome(PATH)
 
-# opening url and grabbing the web page
-uClient = urlopen(my_url)
-page_html = uClient.read()
-uClient.close()
-
-# html parsing
-page_soup = soup(page_html, 'html.parser')
-
-# grabbing all containers with class name = item-container
-containers = page_soup.findAll('div', {'class':'item-container'})
-
-filename = "products.csv"
-f = open(filename, 'w')
-
-headers = "first_last_name, position_title, email_trail\n"
-
-f.write(headers)
-
-container = containers[1]
-
-for container in containers:
-    brand = container.div.div.a.img['title']
-    title_container = container.findAll('a', {'class':'first_last_name'})
-    product_name = title_container[0].text
-    ship_container = container.findAll('li', {'class':'position_title'})
-    # use strip() to remove blank spaces before and after text
-    shipping = email_trail[0].text.strip()
-
-    print("name:" + first_last_name)
-    print("company title:" + position_title)
-    print("possible email permutations:" + email_trail)
-
-    f.write(brand + ',' + product_name.replace(',' , '|') + ',' + shipping + '\n')
-
-f.close()
+# Create New Workbook and open the current active window
+workbook = Workbook()
+sheet = workbook.active
 
 
+
+# Open Text File of Website List
+with open('websites.txt') as websiteSpreadsheet:
+	
+	for line in websiteSpreadsheet: # Iterate through all lines
+		
+		# Grab Website URL and Set As Source
+		driver.get(line)
+		LoadedPageSource = driver.page_source
+
+		# ReGEX find all email matches within HTML of website
+		FoundEmails = re.findall(r'[\w\.-]+@[\w\.-]+', LoadedPageSource)
+		for email in FoundEmails:
+			print(sheet.cell_value(email, 0))
+			sheet["B1"] = email
+			websiteSpreadsheet.write(email) + (',' (',' , '|') + ',' + '\n')
+			print(email) # Print the Email to Terminal to Show List
+	
+# Save and Close Excel Workbook When Finished Executing 
+workbook.Save()
+workbook.Close()
+
+# Quit Open Sheet To Signal Execution Done
+sheet.Quit()
